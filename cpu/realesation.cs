@@ -12,18 +12,27 @@ class ArraySumCalculator
 
     public static long ParallelSum(int[] array)
     {
-        long sum = 0;
-        object lockObj = new object();
+        int workerCount = Environment.ProcessorCount;
+        long[] partialSums = new long[workerCount];
+        int arrayLength = array.Length;
+        int chunkSize = (int)Math.Ceiling((double)arrayLength / workerCount);
 
-        Parallel.ForEach(array, (num) =>
+        Parallel.For(0, workerCount, i =>
         {
-            lock (lockObj)
+            int start = i * chunkSize;
+            int end = Math.Min(start + chunkSize, arrayLength);
+            
+            long sum = 0;
+
+            for (int j = start; j < end; j++)
             {
-                sum += num;
+                sum += array[j];
             }
+
+            partialSums[i] = sum;
         });
 
-        return sum;
+        return partialSums.Sum();
     }
 
     public static long LinqParallelSum(int[] array)
